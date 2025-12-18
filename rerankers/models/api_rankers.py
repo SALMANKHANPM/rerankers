@@ -17,6 +17,7 @@ URLS = {
     "voyage": "https://api.voyageai.com/v1/rerank",
     "mixedbread.ai": "https://api.mixedbread.ai/v1/reranking",
     "pinecone": "https://api.pinecone.io/rerank",
+    "nvidia-nim": "http://localhost:8000/v1/ranking",
 }
 AUTHORIZATION_KEY_MAPPING = {
     "pinecone": "Api-Key"
@@ -33,6 +34,7 @@ DOCUMENT_KEY_MAPPING = {
     "mixedbread.ai": "input",
     "text-embeddings-inference":"texts",
     "isaacus": "texts",
+    "nvidia-nim": "passages",
 }
 RETURN_DOCUMENTS_KEY_MAPPING = {
     "mixedbread.ai":"return_input",
@@ -42,13 +44,16 @@ RESULTS_KEY_MAPPING = {
     "voyage": "data",
     "mixedbread.ai": "data",
     "pinecone": "data",
-    "text-embeddings-inference": None
+    "text-embeddings-inference": None,
+    "nvidia-nim": "rankings",
 }
 SCORE_KEY_MAPPING = {
     "mixedbread.ai": "score",
     "pinecone": "score",
     "text-embeddings-inference":"score",
     "isaacus":"score",
+    # NVIDIA NIM returns scores under "logit"
+    "nvidia-nim": "logit",
 }
 
 class APIRanker(BaseRanker):
@@ -76,6 +81,8 @@ class APIRanker(BaseRanker):
         elif self.api_provider == "mixedbread.ai":
             return r["input"]
         elif self.api_provider == "text-embeddings-inference":
+            return r["text"]
+        elif self.api_provider == "nvidia-nim":
             return r["text"]
         else:
             return r["document"]["text"]
@@ -122,13 +129,19 @@ class APIRanker(BaseRanker):
         documents_key = DOCUMENT_KEY_MAPPING.get(self.api_provider,"documents")
         return_documents_key = RETURN_DOCUMENTS_KEY_MAPPING.get(self.api_provider,"return_documents")
 
-        documents = (
-            [d.text for d in docs] if self.api_provider not in ["pinecone"] else [{"text": d.text} for d in docs]
-        ) 
+        if self.api_provider == "nvidia-nim":
+            # NIM expects: query: {text: "..."} and passages: [{text: "..."}, ...]
+            documents = [{"text": d.text} for d in docs]
+            query_value = {"text": query}
+        else:
+            documents = (
+                [d.text for d in docs] if self.api_provider not in ["pinecone"] else [{"text": d.text} for d in docs]
+            )
+            query_value = query
         
         payload = {
             "model": self.model,
-            "query": query,
+            "query": query_value,
             documents_key: documents,
             top_key: len(docs),
             return_documents_key: True,

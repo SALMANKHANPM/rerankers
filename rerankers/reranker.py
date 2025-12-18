@@ -5,6 +5,7 @@ from rerankers.models.ranker import BaseRanker
 from rerankers.utils import vprint
 
 DEFAULTS = {
+    "nvidia-nim": {"en": "nvidia-nim-rerank-v1"},
     "jina": {"en": "jina-reranker-v1-base-en"},
     "isaacus": {"en": "kanon-universal-classifier"},
     "pinecone": {"en": "pinecone-rerank-v0"},
@@ -68,7 +69,7 @@ DEPS_MAPPING = {
     "PyLateRanker": "pylate",
 }
 
-PROVIDERS = ["cohere", "jina", "voyage", "mixedbread.ai", "pinecone", "isaacus", "text-embeddings-inference"]
+PROVIDERS = ["nvidia-nim", "cohere", "jina", "voyage", "mixedbread.ai", "pinecone", "isaacus", "text-embeddings-inference"]
 
 def _get_api_provider(model_name: str, model_type: Optional[str] = None) -> Optional[str]:
     # If an explicit model_type is provided and it isn't one of the known API providers,
@@ -92,6 +93,7 @@ def _get_api_provider(model_name: str, model_type: Optional[str] = None) -> Opti
 def _get_model_type(model_name: str, explicit_model_type: Optional[str] = None) -> str:
     if explicit_model_type:
         model_mapping = {
+            "nvidia-nim": "APIRanker",
             "cohere": "APIRanker",
             "pinecone": "APIRanker",
             "jina": "APIRanker",
@@ -123,6 +125,7 @@ def _get_model_type(model_name: str, explicit_model_type: Optional[str] = None) 
             "rankgpt": "RankGPTRanker",
             "gpt": "RankGPTRanker",
             "colbert": "ColBERTRanker",
+            "nvidia-nim": "APIRanker",
             "cohere": "APIRanker",
             "pinecone": "APIRanker",
             "jina": "APIRanker",
